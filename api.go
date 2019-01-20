@@ -14,6 +14,7 @@ func Stats(w http.ResponseWriter, r *http.Request) {
 	if id == "" {
 		return
 	}
+	fmt.Println(id)
 	go func() {
 		defer func() {
 			close(ch)
