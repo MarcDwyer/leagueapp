@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"runtime"
 
 	"github.com/joho/godotenv"
 )
@@ -14,6 +15,8 @@ import (
 var key string
 
 func init() {
+	fmt.Println(runtime.NumCPU())
+
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
