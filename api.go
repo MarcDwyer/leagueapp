@@ -23,33 +23,55 @@ func Stats(w http.ResponseWriter, r *http.Request) {
 	res, err := http.Get(url)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
-
-	err = json.NewDecoder(res.Body).Decode(&data)
-	if err != nil {
-		fmt.Println(err)
-	}
+	json.NewDecoder(res.Body).Decode(&data)
 	if _, ok := data["id"]; !ok {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
-	url = fmt.Sprintf("https://na1.api.riotgames.com/lol/league/v4/positions/by-summoner/%v?api_key=%v", data["id"], key)
-	rz, err := http.Get(url)
-	if err != nil {
-		fmt.Println(err)
+	var newData Payload
+	str := fmt.Sprintf("/lol/league/v4/positions/by-summoner/%v?api_key=%v", data["id"], key)
+	GetStats("summonerInfo", str, data, &newData)
+	if newData.Summoner == nil {
+		fmt.Println("newData did not get written")
 		return
 	}
-	var payload Payload
-	err = json.NewDecoder(rz.Body).Decode(&payload.Summoner)
-	if err != nil {
-		fmt.Println(err)
-	}
-	url = fmt.Sprintf("https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/%v?api_key=%v", data["accountId"], key)
+	str = fmt.Sprintf("/lol/match/v4/matchlists/by-account/%v?api_key=%v", data["accountId"], key)
+	GetStats("matches", str, data, &newData)
+	payload, _ := json.Marshal(newData)
+
+	w.Write(payload)
 }
 
 ///lol/match/v4/matchlists/by-account/{encryptedAccountId}
 
-func getStats(url string, data map[string]interface{}) {
-	url := fmt.Sprintf("https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/%v?api_key=%v", data["accountId"], key)
+func GetStats(req string, url string, data map[string]interface{}, pointer *Payload) {
+	beg := fmt.Sprintf("https://na1.api.riotgames.com%v", url)
+	switch req {
+	case "summonerInfo":
+		rz, err := http.Get(beg)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		var usr []map[string]interface{}
+		err = json.NewDecoder(rz.Body).Decode(&usr)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		pointer.Summoner = usr[0]
+	case "matches":
+		rz, err := http.Get(beg)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		err = json.NewDecoder(rz.Body).Decode(&pointer.Match)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+	}
 }
