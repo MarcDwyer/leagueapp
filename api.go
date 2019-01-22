@@ -8,8 +8,8 @@ import (
 )
 
 type Payload struct {
-	Summoner map[string]interface{} `json:"summoner"`
-	Match    map[string]interface{} `json:"match"`
+	Summoner *map[string]interface{} `json:"summoner, omitempty"`
+	Match    *map[string]interface{} `json:"match, omitempty"`
 }
 
 func Stats(w http.ResponseWriter, r *http.Request) {
@@ -27,6 +27,7 @@ func Stats(w http.ResponseWriter, r *http.Request) {
 	}
 	json.NewDecoder(res.Body).Decode(&data)
 	if _, ok := data["id"]; !ok {
+		fmt.Println(data)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -40,13 +41,13 @@ func Stats(w http.ResponseWriter, r *http.Request) {
 	str = fmt.Sprintf("/lol/match/v4/matchlists/by-account/%v?api_key=%v", data["accountId"], key)
 	GetStats("matches", str, data, &newData)
 	payload, _ := json.Marshal(newData)
-
 	w.Write(payload)
 }
 
 ///lol/match/v4/matchlists/by-account/{encryptedAccountId}
 
 func GetStats(req string, url string, data map[string]interface{}, pointer *Payload) {
+	fmt.Println("is this running?")
 	beg := fmt.Sprintf("https://na1.api.riotgames.com%v", url)
 	switch req {
 	case "summonerInfo":
@@ -61,7 +62,7 @@ func GetStats(req string, url string, data map[string]interface{}, pointer *Payl
 			fmt.Println(err)
 			return
 		}
-		pointer.Summoner = usr[0]
+		pointer.Summoner = &usr[0]
 	case "matches":
 		rz, err := http.Get(beg)
 		if err != nil {
